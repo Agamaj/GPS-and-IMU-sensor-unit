@@ -1,5 +1,9 @@
 # GPS and IMU Sensor Unit
 
+## Device funcionality
+
+Every second, MCU reads sensor raw data and computes exact location, acceleration/speed, direction of the movement. Results will be shown on the OLED display clearly. We may add a small arrow showing a direction of the movement.
+
 ## Hardware Components
 
 This project uses a Raspberry Pi Pico W microcontroller to collect
