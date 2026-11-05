@@ -75,12 +75,12 @@ ________________________________________
 
 ## Project Functionality
 
-1.	Receive GPS data via UART.
-2.	Check GPS fix status.
-3.	Read acceleration and angular velocity from IMU.
-4.	Process sensor data using Raspberry Pi Pico W.
-5.	Display GPS and IMU measurements on OLED.
-6.	Indicate unavailable or invalid GPS data.
+**1.**	Receive GPS data via UART.
+**2.**	Check GPS fix status.
+**3.**	Read acceleration and angular velocity from IMU.
+**4.**	Process sensor data using Raspberry Pi Pico W.
+**5.**	Display GPS and IMU measurements on OLED.
+**6.**	Indicate unavailable or invalid GPS data.
 ________________________________________
 
 
