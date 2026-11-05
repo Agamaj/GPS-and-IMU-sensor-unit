@@ -66,9 +66,9 @@ ________________________________________
 
 ## Software
 
--	**Programming Language: MicroPython
--	**Development Environment: Thonny / Visual Studio Code
--	**Version Control: Git / GitHub
+-	**Programming Language:** MicroPython
+-	**Development Environment:** Thonny / Visual Studio Code
+-	**Version Control:** Git / GitHub
 ________________________________________
 
 ## Project Functionality
