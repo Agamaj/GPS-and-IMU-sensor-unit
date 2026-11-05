@@ -1,9 +1,12 @@
-GPS and IMU Sensor Unit
-Hardware Components
+# GPS and IMU Sensor Unit
+
+## Hardware Components
+
 This project uses a Raspberry Pi Pico W microcontroller to collect
 GPS position data and measurements from an IMU sensor.
 The measured values are displayed on an OLED screen.
-Bill of Materials (BOM)
+### Bill of Materials (BOM)
+
 | No. | Component | Model | Quantity | Purpose |
 |-----|-----------|-------|----------|---------|
 | 1 | Microcontroller | Raspberry Pi Pico W (RP2040) | 1 | Main control unit |
@@ -14,7 +17,9 @@ Bill of Materials (BOM)
 | 6 | Jumper Wires | Dupont wires | 1 set | Electrical connections |
 | 7 | USB Cable | Micro-USB data cable | 1 | Power supply and programming |
 ________________________________________
-Communication Interfaces
+
+## Communication Interfaces
+
 | Component | Interface | Pico W Pins |
 |-----------|-----------|-------------|
 | GPS NEO-6M | UART0 | GP0 (TX), GP1 (RX) |
@@ -22,39 +27,52 @@ Communication Interfaces
 | OLED SSD1306 | I2C0 | GP4 (SDA), GP5 (SCL) |
 The IMU sensor and OLED display share the same I2C bus.
 ________________________________________
-Pin Connections
-GPS NEO-6M
+
+## Pin Connections
+
+### GPS NEO-6M
+
 •	GPS TX -> Pico GP1 (UART0 RX)
 •	GPS RX -> Pico GP0 (UART0 TX)
 •	GPS VCC -> Compatible power supply
 •	GPS GND -> Pico GND
-IMU MPU-6050
+
+## IMU MPU-6050
+
 •	VCC -> Pico 3V3
 •	GND -> Pico GND
 •	SDA -> Pico GP4
 •	SCL -> Pico GP5
-OLED SSD1306
+
+## OLED SSD1306
+
 •	VCC -> Pico 3V3
 •	GND -> Pico GND
 •	SDA -> Pico GP4
 •	SCL -> Pico GP5
-Important: Verify the GPS module supply voltage
+**Important:** Verify the GPS module supply voltage
 and UART logic levels before connecting it.
 All Pico W GPIO signals must be 3.3 V compatible.
 ________________________________________
-Power Supply
+
+## Power Supply
+
 •	Raspberry Pi Pico W: 5 V via USB
 •	IMU MPU-6050: 3.3 V
 •	OLED SSD1306: 3.3 V
 •	GPS NEO-6M: According to module specifications
 •	Common GND for all components
 ________________________________________
-Software
-•	Programming Language: MicroPython
-•	Development Environment: Thonny / Visual Studio Code
-•	Version Control: Git / GitHub
+
+## Software
+
+•	**Programming Language: MicroPython
+•	**Development Environment: Thonny / Visual Studio Code
+•	**Version Control: Git / GitHub
 ________________________________________
-Project Functionality
+
+## Project Functionality
+
 1.	Receive GPS data via UART.
 2.	Check GPS fix status.
 3.	Read acceleration and angular velocity from IMU.
@@ -62,8 +80,11 @@ Project Functionality
 5.	Display GPS and IMU measurements on OLED.
 6.	Indicate unavailable or invalid GPS data.
 ________________________________________
-Project Progress
-Week 1 - Proposal and Architecture
+
+## Project Progress
+
+### Week 1 - Proposal and Architecture
+
 •	[x] Preliminary component selection
 •	[x] Communication interface selection
 •	[x] Initial pin assignment
