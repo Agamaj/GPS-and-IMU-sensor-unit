@@ -32,24 +32,24 @@ ________________________________________
 
 ### GPS NEO-6M
 
-•	GPS TX -> Pico GP1 (UART0 RX)
-•	GPS RX -> Pico GP0 (UART0 TX)
-•	GPS VCC -> Compatible power supply
-•	GPS GND -> Pico GND
+-	GPS TX -> Pico GP1 (UART0 RX)
+-	GPS RX -> Pico GP0 (UART0 TX)
+-	GPS VCC -> Compatible power supply
+-	GPS GND -> Pico GND
 
 ## IMU MPU-6050
 
-•	VCC -> Pico 3V3
-•	GND -> Pico GND
-•	SDA -> Pico GP4
-•	SCL -> Pico GP5
+-	VCC -> Pico 3V3
+-	GND -> Pico GND
+-	SDA -> Pico GP4
+-	SCL -> Pico GP5
 
 ## OLED SSD1306
 
-•	VCC -> Pico 3V3
-•	GND -> Pico GND
-•	SDA -> Pico GP4
-•	SCL -> Pico GP5
+-	VCC -> Pico 3V3
+-	GND -> Pico GND
+-	SDA -> Pico GP4
+-	SCL -> Pico GP5
 **Important:** Verify the GPS module supply voltage
 and UART logic levels before connecting it.
 All Pico W GPIO signals must be 3.3 V compatible.
@@ -57,18 +57,18 @@ ________________________________________
 
 ## Power Supply
 
-•	Raspberry Pi Pico W: 5 V via USB
-•	IMU MPU-6050: 3.3 V
-•	OLED SSD1306: 3.3 V
-•	GPS NEO-6M: According to module specifications
-•	Common GND for all components
+-	Raspberry Pi Pico W: 5 V via USB
+-	IMU MPU-6050: 3.3 V
+-	OLED SSD1306: 3.3 V
+-	GPS NEO-6M: According to module specifications
+-	Common GND for all components
 ________________________________________
 
 ## Software
 
-•	**Programming Language: MicroPython
-•	**Development Environment: Thonny / Visual Studio Code
-•	**Version Control: Git / GitHub
+-	**Programming Language: MicroPython
+-	**Development Environment: Thonny / Visual Studio Code
+-	**Version Control: Git / GitHub
 ________________________________________
 
 ## Project Functionality
@@ -85,9 +85,9 @@ ________________________________________
 
 ### Week 1 - Proposal and Architecture
 
-•	[x] Preliminary component selection
-•	[x] Communication interface selection
-•	[x] Initial pin assignment
-•	[ ] Hardware verification
-•	[ ] Block diagram approval
-•	[ ] Timing and concurrency plan
+-	[x] Preliminary component selection
+-	[x] Communication interface selection
+-	[x] Initial pin assignment
+-	[ ] Hardware verification
+-	[ ] Block diagram approval
+-	[ ] Timing and concurrency plan
