@@ -83,13 +83,4 @@ ________________________________________
 6.	Indicate unavailable or invalid GPS data.
 ________________________________________
 
-## Project Progress
 
-### Week 1 - Proposal and Architecture
-
--	[x] Preliminary component selection
--	[x] Communication interface selection
--	[x] Initial pin assignment
--	[ ] Hardware verification
--	[ ] Block diagram approval
--	[ ] Timing and concurrency plan
