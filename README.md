@@ -1,1 +1,1 @@
-# -GPS-and-IMU-sensor-unit
+# GPS-and-IMU-sensor-unit
