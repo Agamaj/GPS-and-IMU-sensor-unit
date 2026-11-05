@@ -9,13 +9,15 @@ The measured values are displayed on an OLED screen.
 
 | No. | Component | Model | Quantity | Purpose |
 |-----|-----------|-------|----------|---------|
-| 1 | Microcontroller | Raspberry Pi Pico W (RP2040) | 1 | Main control unit |
-| 2 | GPS Module | u-blox NEO-6M + antenna | 1 | GPS position, speed and fix status |
-| 3 | IMU Sensor | GY-521 (MPU-6050) | 1 | Acceleration and angular velocity |
-| 4 | OLED Display | SSD1306, 0.96", 128x64, I2C | 1 | Displaying sensor measurements |
-| 5 | Breadboard | 400 or 830 tie-points | 1 | Prototype assembly |
-| 6 | Jumper Wires | Dupont wires | 1 set | Electrical connections |
-| 7 | USB Cable | Micro-USB data cable | 1 | Power supply and programming |
+| 1 | Microcontroller | Raspberry Pi Pico W | 1 | Main control unit |
+| 2 | GPS Module | u-blox NEO-6M | 1 | GPS position and speed |
+| 3 | Gyroscope & Accelerometer | MPU-6050 (GY-521) | 1 | Angular velocity and acceleration |
+| 4 | OLED Display | SSD1306 (I2C, 128x64) | 1 | Displaying measured data |
+| 5 | Pressure Sensor (Optional) | BMP280 / BME280 | 1 | Atmospheric pressure measurement |
+| 6 | Breadboard | 400/830 tie-points | 1 | Prototype assembly |
+| 7 | Jumper Wires | Dupont | 1 set | Electrical connections |
+| 8 | USB Cable | Micro-USB | 1 | Power supply and programming |
+
 ________________________________________
 
 ## Communication Interfaces
