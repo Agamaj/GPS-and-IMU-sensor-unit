@@ -87,4 +87,6 @@ ________________________________________
 6.	Indicate unavailable or invalid GPS data.
 ________________________________________
 
+## Provisional Schematic
 
+![Provisional Schematic](Schema6.png)
