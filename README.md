@@ -56,9 +56,6 @@ ________________________________________
 -	GND -> Pico GND
 -	SDA -> Pico GP4
 -	SCL -> Pico GP5
-**Important:** Verify the GPS module supply voltage
-and UART logic levels before connecting it.
-All Pico W GPIO signals must be 3.3 V compatible.
 ________________________________________
 
 ## Power Supply
@@ -110,6 +107,7 @@ successfully measured using I2C communication.
 ________________________________________
 
 ###  2.  NEO - 6M Module
+
 The NEO-6M GPS module will be connected to the
 Raspberry Pi Pico W using the UART0 interface.
 
@@ -131,15 +129,15 @@ The SSD1306 OLED display will be connected to the
 Raspberry Pi Pico W using the I2C0 interface.
 
 The display will be used to show GPS coordinates,
-speed, GPS fix status and IMU measurements.
+speed, Wifi connection, GPS fix status and IMU measurements.
 
 The test will verify I2C communication, text
 rendering and display updates using MicroPython.
 
 **Test Status:** Successful
 
--	[SSD1306 Documentation](test%20codes/SSD1306.md)
--	[SSD1306 Python Code](test%20codes/SSD1306.py)
+-	[SSD1306 Documentation](test%20codes/oled.md)
+-	[SSD1306 Python Code](test%20codes/oled.py)
 
 
 
