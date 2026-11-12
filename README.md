@@ -102,7 +102,7 @@ successfully measured using I2C communication.
 **Test Status:** Successful
 
 -	[MPU-6050 Documentation](test%20codes/MPU6050.md)
--	[MPU-6050 Python Code](test%20codes/MPU6050.py)
+-	[MPU-6050 test code](test%20codes/MPU6050.py)
 
 ________________________________________
 
@@ -120,7 +120,7 @@ reception and GPS fix validity.
 **Test Status:** Successful
 
 -	[NEO-6M Documentation](test%20codes/NEO6M.md)
--	[NEO-6M Python Code](test%20codes/NEO6M.py)
+-	[NEO-6M test code](test%20codes/NEO6M.py)
 ________________________________________
 
 ###  3.  SSD1306 – OLED Display
@@ -136,8 +136,8 @@ rendering and display updates using MicroPython.
 
 **Test Status:** Successful
 
--	[SSD1306 Documentation](test%20codes/oled.md)
--	[SSD1306 Python Code](test%20codes/oled.py)
+-	[OLED Documentation](test%20codes/oled.md)
+-	[OLED test code](test%20codes/oled.py)
 
 
 
