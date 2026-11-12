@@ -119,8 +119,8 @@ reception and GPS fix validity.
 
 **Test Status:** Successful
 
--	[NEO-6M Documentation](test%20codes/NEO6M.md)
--	[NEO-6M test code](test%20codes/NEO6M.py)
+-	[NEO-6M Documentation](test%20codes/NEO-6M.md)
+-	[NEO-6M test code](test%20codes/NEO-6M.py)
 ________________________________________
 
 ###  3.  SSD1306 – OLED Display
