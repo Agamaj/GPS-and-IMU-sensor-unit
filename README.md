@@ -90,3 +90,44 @@ ________________________________________
 ## Provisional Schematic
 
 ![Provisional Schematic](Schema6.png)
+________________________________________
+
+## Hardware Component Testing
+
+###  1.  MPU - 6050 - Gyroscope and Accelerometer
+
+The MPU-6050 sensor was successfully connected to the Raspberry Pi Pico W using the I2C interface.
+Acceleration and angular velocity measurements were successfully obtained and displayed in the terminal using MicroPython.
+The initial test confirmed correct sensor communication and data reading. Gyroscope calibration is planned to improve measurement accuracy.
+**Test Status:** Successful
+**Detailed documentation:** [MPU-6050](docs/MPU6050.md)
+
+###  2.  SSD1306 - OLED Display
+
+###  3.  NEO - 6M - GPS MODULE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
