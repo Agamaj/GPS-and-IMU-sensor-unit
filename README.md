@@ -96,11 +96,17 @@ ________________________________________
 
 ###  1.  MPU - 6050 - Gyroscope and Accelerometer
 
-The MPU-6050 sensor was successfully connected to the Raspberry Pi Pico W using the I2C interface.
-Acceleration and angular velocity measurements were successfully obtained and displayed in the terminal using MicroPython.
-The initial test confirmed correct sensor communication and data reading. Gyroscope calibration is planned to improve measurement accuracy.
+The MPU-6050 was successfully tested using
+Raspberry Pi Pico W and MicroPython.
+
+Acceleration and angular velocity data were
+successfully measured using I2C communication.
+
 **Test Status:** Successful
-**Detailed documentation:** [MPU-6050](testcodes/MPU6050.md)
+
+-	[MPU-6050 Documentation](test%20codes/MPU6050.md)
+-	[MPU-6050 Python Code](test%20codes/MPU6050.py)
+
 
 ###  2.  SSD1306 - OLED Display
 
