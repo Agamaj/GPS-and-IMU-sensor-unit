@@ -100,7 +100,7 @@ The MPU-6050 sensor was successfully connected to the Raspberry Pi Pico W using 
 Acceleration and angular velocity measurements were successfully obtained and displayed in the terminal using MicroPython.
 The initial test confirmed correct sensor communication and data reading. Gyroscope calibration is planned to improve measurement accuracy.
 **Test Status:** Successful
-**Detailed documentation:** [MPU6050](docs/MPU6050.md)
+**Detailed documentation:** [MPU-6050](MPU6050.md)
 
 ###  2.  SSD1306 - OLED Display
 
