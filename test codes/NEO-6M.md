@@ -4,8 +4,6 @@
 
 The NEO-6M is a GPS (Global Positioning System) receiver module designed to determine geographical position, velocity and time using signals received from GPS satellites.
 
-The module provides location and navigation information through NMEA (National Marine Electronics Association) sentences.
-
 The GPS receiver provides the following information:
 
 - Geographical latitude and longitude
@@ -15,9 +13,7 @@ The GPS receiver provides the following information:
 - GPS fix status
 - Speed and direction of movement
 
-In this project, the NEO-6M GPS module is connected to a Raspberry Pi Pico W and programmed using MicroPython.
-
-The module communicates with the microcontroller through a UART serial interface and transmits GPS data in the form of NMEA sentences.
+The module communicates with the microcontroller through a UART serial interface.
 
 ## 2. Hardware Specifications
 
@@ -31,14 +27,12 @@ The module communicates with the microcontroller through a UART serial interface
 | Supply Voltage | Depends on module version (typically 3.3–5 V) |
 | Operating Frequency | 1575.42 MHz (GPS L1) |
 | Position Accuracy | Approximately 2.5 m (under suitable conditions) |
-| Microcontroller | Raspberry Pi Pico W |
-| Programming Language | MicroPython |
 
 ## 3. Hardware Connections
 
 | NEO-6M Pin | Raspberry Pi Pico W | Physical Pin |
 |------------|---------------------|--------------|
-| VCC | VBUS / 3V3 OUT (depending on module requirements) | 40 / 36 |
+| VCC | 3V3 | 36 |
 | GND | GND | 38 |
 | TX | GP1 (UART0 RX) | 2 |
 | RX | GP0 (UART0 TX) | 1 |
@@ -47,61 +41,13 @@ The GPS module communicates with the Raspberry Pi Pico W using the UART0 interfa
 
 The TX pin of the GPS module is connected to the RX pin of the microcontroller, while the RX pin of the GPS module is connected to the TX pin.
 
-Only the TX connection is required for receiving GPS data.
-
-## 4. UART Communication Test
-
-The UART interface was initialized using the following configuration:
-
-- UART controller: UART0
-- TX: GP0
-- RX: GP1
-- Baud rate: 9600
-- Data format: NMEA 0183
-- Communication: Serial UART
-
-The Raspberry Pi Pico W continuously reads incoming serial data from the GPS module.
-
-The received data is stored in a buffer and separated into individual lines using the newline character (`\n`).
-
-Each complete line is checked to determine whether it starts with the `$` character, which indicates the beginning of an NMEA sentence.
-
-Valid ASCII sentences are then decoded and displayed in the terminal.
-
-## 5. GPS Module Testing
+## 4. GPS Module Testing
 
 The NEO-6M was tested using the following MicroPython program.
 
 ### MicroPython Code
 
-```python
-from machine import UART
-from time import sleep_ms
-
-uart = UART(0, baudrate=9600, tx=0, rx=1)
-
-buffer = b''
-
-while True:
-    if uart.any():
-        data = uart.read()
-
-        if data:
-            buffer += data
-
-            while b'\n' in buffer:
-                line, buffer = buffer.split(b'\n', 1)
-
-                line = line.strip()
-
-                if line.startswith(b'$'):
-                    try:
-                        print(line.decode('ascii'))
-                    except UnicodeError:
-                        print("Invalid characters received")
-
-    sleep_ms(5)
-```
+The [file](NEO-6M.py).
 
 The program performs the following operations:
 
@@ -129,11 +75,11 @@ The GPS module transmits several types of NMEA sentences.
 
 These sentences contain the information required to determine the current GPS position and navigation status.
 
-## 6. Experimental Results
+## 5. Experimental Results
 
 The GPS module was tested indoors. The following NMEA sentences were successfully received and displayed in the terminal:
 
-```text
+```
 $GPVTG,,,,,,,,,N*30
 $GPGGA,,,,,,0,00,99.99,,,,,,*48
 $GPGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*30
@@ -143,8 +89,6 @@ $GPRMC,,V,,,,,,,,,,N*53
 ```
 
 The received sentences indicate that UART communication between the NEO-6M GPS module and the Raspberry Pi Pico W is working correctly.
-
-However, the GPS receiver did not obtain a valid position fix during the indoor test.
 
 ### Interpretation of the Received Data
 
@@ -160,7 +104,7 @@ However, the GPS receiver did not obtain a valid position fix during the indoor 
 
 The received sentences contain empty fields for latitude, longitude, altitude and other navigation parameters because the receiver has not established a valid GPS fix.
 
-## 7. Results and Evaluation
+## 6. Results and Evaluation
 
 ### UART Communication
 
@@ -178,14 +122,10 @@ The GGA sentence reported a fix quality of `0`, while the GSA sentence indicated
 
 The RMC and GLL sentences both contained the status indicator `V`, which means that the navigation data is invalid.
 
-This result is expected under indoor testing conditions because GPS signals are relatively weak and can be significantly attenuated by roofs, walls and other building structures.
+This result is expected under indoor testing conditions because GPS signals are relatively weak and can be attenuated by roofs and walls.
 
 ### Conclusion
 
 The initial test successfully verified the hardware connection and UART communication between the NEO-6M GPS module and the Raspberry Pi Pico W.
 
-However, the GPS receiver was unable to determine its geographical position indoors due to insufficient satellite reception.
-
-Further testing will be performed outdoors, where the GPS antenna has a clearer view of the sky. Under suitable reception conditions, the module should be able to acquire satellite signals and provide valid position, altitude, speed and time information.
-
-A subsequent step will be to parse the received NMEA sentences to extract latitude, longitude and other GPS parameters for use in the project.
+NMEA sentences will need to be parsed to obtain useful data, but the module works and we have a way to interface with it.
