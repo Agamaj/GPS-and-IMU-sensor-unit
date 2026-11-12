@@ -125,7 +125,7 @@ reception and GPS fix validity.
 -	[NEO-6M Python Code](test%20codes/NEO6M.py)
 ________________________________________
 
-###  SSD1306 – OLED Display
+###  3.  SSD1306 – OLED Display
 
 The SSD1306 OLED display will be connected to the
 Raspberry Pi Pico W using the I2C0 interface.
