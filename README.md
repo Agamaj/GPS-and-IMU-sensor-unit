@@ -107,11 +107,39 @@ successfully measured using I2C communication.
 -	[MPU-6050 Documentation](test%20codes/MPU6050.md)
 -	[MPU-6050 Python Code](test%20codes/MPU6050.py)
 
+________________________________________
 
-###  2.  SSD1306 - OLED Display
+###  2.  NEO - 6M Module
+The NEO-6M GPS module will be connected to the
+Raspberry Pi Pico W using the UART0 interface.
 
-###  3.  NEO - 6M - GPS MODULE
+The module will be used to receive GPS coordinates,
+speed and satellite fix status.
 
+The test will verify UART communication, NMEA data
+reception and GPS fix validity.
+
+**Test Status:** Successful
+
+-	[NEO-6M Documentation](test%20codes/NEO6M.md)
+-	[NEO-6M Python Code](test%20codes/NEO6M.py)
+________________________________________
+
+###  SSD1306 – OLED Display
+
+The SSD1306 OLED display will be connected to the
+Raspberry Pi Pico W using the I2C0 interface.
+
+The display will be used to show GPS coordinates,
+speed, GPS fix status and IMU measurements.
+
+The test will verify I2C communication, text
+rendering and display updates using MicroPython.
+
+**Test Status:** Successful
+
+-	[SSD1306 Documentation](test%20codes/SSD1306.md)
+-	[SSD1306 Python Code](test%20codes/SSD1306.py)
 
 
 
