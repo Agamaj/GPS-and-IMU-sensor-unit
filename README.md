@@ -86,7 +86,7 @@ ________________________________________
 
 ## Provisional Schematic
 
-![Provisional Schematic](Schema6.png)
+![Provisional Schematic](Schema/Schema8.png)
 ________________________________________
 
 ## Hardware Component Testing
