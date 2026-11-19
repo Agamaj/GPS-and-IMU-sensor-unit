@@ -170,14 +170,7 @@ The main program combines the individual modules into one application.
 
 **Main Python Code:** [main.py](LINK_TO_MAIN_CODE)
 
-###  Integration Status
 
--	[x] Individual component testing completed
--	[x] MPU-6050 software module developed
--	[ ] Integration of all hardware modules
--	[ ] Main application testing
--	[ ] Verification of GPS and IMU data display
--	[ ] Final integrated prototype
 
 
 
