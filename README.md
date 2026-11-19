@@ -142,6 +142,42 @@ rendering and display updates using MicroPython.
 
 
 
+##  System Integration
+
+###  Integration of GPS, IMU and OLED Display
+
+During the third week, the individually tested hardware components are being integrated into a single system controlled by the Raspberry Pi Pico W.
+The main application is developed in MicroPython and combines three hardware modules:
+
+-	**MPU-6050:** Measures acceleration and angular velocity using I2C communication.
+-	**NEO-6M GPS:** Provides GPS coordinates, speed and satellite fix status using UART communication.
+-	**SSD1306 OLED:** Displays the processed GPS and IMU measurements using I2C communication.
+
+###  Software Integration
+
+Each component is implemented as a separate software module to simplify testing, maintenance and integration.
+The main application is responsible for:
+
+1.	Initializing all connected hardware modules.
+2.	Reading GPS and IMU sensor data.
+3.	Processing and validating the received measurements.
+4.	Displaying selected information on the OLED screen.
+5.	Handling unavailable GPS data and communication errors.
+
+###  Main Application
+
+The main program combines the individual modules into one application.
+
+**Main Python Code:** [main.py](LINK_TO_MAIN_CODE)
+
+###  Integration Status
+
+-	[x] Individual component testing completed
+-	[x] MPU-6050 software module developed
+-	[ ] Integration of all hardware modules
+-	[ ] Main application testing
+-	[ ] Verification of GPS and IMU data display
+-	[ ] Final integrated prototype
 
 
 
