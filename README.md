@@ -150,6 +150,7 @@ The main application is developed in MicroPython and combines three hardware mod
 -	**MPU-6050:** Measures acceleration and angular velocity using I2C communication.
 -	**NEO-6M GPS:** Provides GPS coordinates, speed and satellite fix status using UART communication.
 -	**SSD1306 OLED:** Displays the processed GPS and IMU measurements using I2C communication.
+
 ________________________________________
 
 ###  Software Integration
