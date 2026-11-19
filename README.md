@@ -77,6 +77,7 @@ The measured values are displayed on an OLED screen.
 | 6 | Breadboard | 400/830 tie-points | 1 | Prototype assembly |
 | 7 | Jumper Wires | Dupont | 1 set | Electrical connections |
 | 8 | USB Cable | Micro-USB | 1 | Power supply and programming |
+| 9 | Button | Unknown | 1 | Switching between screen modes |
 
 ________________________________________
 
@@ -140,9 +141,9 @@ ________________________________________
 6.	Indicate unavailable or invalid GPS data.
 ________________________________________
 
-## Provisional Schematic
+## Schematic
 
-![Provisional Schematic](Schema/Schema8.png)
+![Schematic](Schema/Schema10.png)
 ________________________________________
 
 ## Hardware Component Testing
