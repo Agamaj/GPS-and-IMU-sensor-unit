@@ -152,7 +152,6 @@ The main application is developed in MicroPython and combines three hardware mod
 -	**SSD1306 OLED:** Displays the processed GPS and IMU measurements using I2C communication.
 
 ________________________________________
-
 ###  Software Integration
 
 Each component is implemented as a separate software module to simplify testing, maintenance and integration.
