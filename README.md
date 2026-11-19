@@ -4,6 +4,62 @@
 
 Every second, MCU reads sensor raw data and computes exact location, acceleration/speed, direction of the movement. Results will be shown on the OLED display clearly. We also may add a small arrow showing a direction of the movement or a GPS and WiFi sign for indicating network stability - all of this is optional and doesn't need to be included in the code.
 
+##  Program Functionality and Timing
+
+The main application integrates the GPS NEO-6M,
+MPU-6050 and SSD1306 OLED display using MicroPython
+on the Raspberry Pi Pico W.
+
+The program uses a non-blocking main loop with
+periodically scheduled operations based on
+  `time.ticks_ms()`.
+
+###  Task Scheduling
+
+| Task | Interval | Description |
+|------|----------|-------------|
+| GPS data reception | Every loop (~10 ms minimum) | Reads available NMEA data through UART0 and checks GPS fix validity. |
+| IMU measurement | 100 ms (10 Hz) | Reads acceleration and angular velocity from MPU-6050 via I2C0. |
+| OLED update | 500 ms (2 Hz) | Displays current GPS or IMU measurements. |
+| Display page switching | 5000 ms (5 s) | Automatically switches between GPS and IMU screens. |
+| Serial terminal output | 1000 ms (1 Hz) | Prints GPS and IMU measurements for debugging. |
+| GPS fix timeout | 3000 ms (3 s) | Invalidates GPS measurements if no recent valid fix is received. |
+| Gyroscope calibration | Once at startup (~2 s) | Calculates gyroscope offsets while the sensor remains stationary. |
+| Main loop delay | 10 ms | Reduces unnecessary CPU usage. |
+
+###  Timing and Concurrency
+
+The program uses a cooperative scheduling approach
+without threads or asynchronous tasks.
+
+The main loop checks elapsed time using
+  `time.ticks_ms()` and `time.ticks_diff()`.
+
+This allows GPS reception, IMU measurements and
+OLED updates to run at different intervals.
+
+GPS data is processed continuously when available,
+while IMU readings and display updates are performed
+periodically.
+
+The gyroscope calibration is performed once during
+startup and temporarily blocks the main loop.
+
+###  Error Handling
+
+The program includes basic error handling:
+
+-	Invalid GPS fixes are clearly indicated.
+-	Outdated GPS coordinates are rejected.
+-	I2C devices are checked during initialization.
+-	Sensor communication errors are reported.
+-	Unavailable IMU data is not displayed as a valid measurement.
+
+**Note:** The listed intervals are software scheduling
+targets. Actual timing may vary depending on UART data
+processing, I2C communication and display updates.
+________________________________________
+
 ## Hardware Components
 
 This project uses a Raspberry Pi Pico W microcontroller to collect
