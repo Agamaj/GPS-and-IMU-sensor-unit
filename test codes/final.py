@@ -1,5 +1,6 @@
 from machine import I2C, Pin, UART, Timer
 from sh1106 import SH1106_I2C
+import math
 import network
 import struct
 import time
@@ -9,14 +10,12 @@ import config
 OLED_WIDTH = 128
 OLED_HEIGHT = 64
 
-# Piny přesně podle schématu zapojení:
-# I2C0: GP4 = SDA, GP5 = SCL (sdíleno pro OLED a MPU6050)
+# Piny podle schématu zapojení:
 I2C_SDA_PIN = 4
 I2C_SCL_PIN = 5
-
-# UART0: GP0 = TX (na RXD GPS), GP1 = RX (na TXD GPS)
 UART_TX_PIN = 0
 UART_RX_PIN = 1
+BUTTON_PIN = 17           # Tlačítko připojené mezi GP17 a GND
 
 # Pozice ikon v pravém horním rohu
 ICON_X = OLED_WIDTH - 14  # x = 114
@@ -27,8 +26,9 @@ HEADER_LINE_Y = 13
 
 # Intervaly obnovování (ms)
 WIFI_CHECK_MS = 5000      # Kontrola Wi-Fi každých 5 s
-DISPLAY_UPDATE_MS = 250   # Obnovení dat na OLED 4x za sekundu
+DISPLAY_UPDATE_MS = 100   # Rychlejší obnovení (10x za sekundu) pro plynulou šipku
 GPS_TIMEOUT_MS = 3000     # Po 3 s bez dat zhasne ikona GPS
+DEBOUNCE_MS = 250         # Ochrana proti zákmitům tlačítka
 
 # Globální proměnné pro řízení blikání Wi-Fi z časovače
 is_wifi_connected = False
@@ -36,13 +36,14 @@ blink_state = True
 
 
 # ==============================================================================
-# 1. TŘÍDA PRO MPU6050 (s podporou adres 0x68 i 0x69)
+# 1. TŘÍDA PRO MPU6050 (s podporou adres 0x68 i 0x69 a kalibrací X/Y/Z)
 # ==============================================================================
 class MPU6050:
     def __init__(self, i2c, address=0x68):
         self.i2c = i2c
         self.address = address
         self.gyro_offset = [0.0, 0.0, 0.0]
+        self.accel_offset = [0.0, 0.0]  # Klidový offset pro osy X a Y na stole
 
         # Probuzení senzoru
         self.i2c.writeto_mem(self.address, 0x6B, b'\x00')
@@ -61,9 +62,9 @@ class MPU6050:
         ax, ay, az, temp, gx, gy, gz = self.read_raw()
         return {
             "accel": {
-                "x": ax / 16384 * 9.80665,
-                "y": ay / 16384 * 9.80665,
-                "z": az / 16384 * 9.80665
+                "x": (ax / 16384 * 9.80665) - self.accel_offset[0],
+                "y": (ay / 16384 * 9.80665) - self.accel_offset[1],
+                "z": (az / 16384 * 9.80665)
             },
             "gyro": {
                 "x": gx / 131.0 - self.gyro_offset[0],
@@ -73,15 +74,20 @@ class MPU6050:
         }
 
     def calibrate(self, samples=50, delay_ms=10):
-        offsets = [0.0, 0.0, 0.0]
+        g_offsets = [0.0, 0.0, 0.0]
+        a_offsets = [0.0, 0.0]
+
         for _ in range(samples):
             raw = self.read_raw()
-            offsets[0] += raw[4] / 131.0
-            offsets[1] += raw[5] / 131.0
-            offsets[2] += raw[6] / 131.0
+            a_offsets[0] += (raw[0] / 16384 * 9.80665)
+            a_offsets[1] += (raw[1] / 16384 * 9.80665)
+            g_offsets[0] += raw[4] / 131.0
+            g_offsets[1] += raw[5] / 131.0
+            g_offsets[2] += raw[6] / 131.0
             time.sleep_ms(delay_ms)
 
-        self.gyro_offset = [value / samples for value in offsets]
+        self.accel_offset = [val / samples for val in a_offsets]
+        self.gyro_offset = [val / samples for val in g_offsets]
         return self.gyro_offset
 
 
@@ -156,7 +162,6 @@ def convert_coordinate(value, direction):
 
 
 def format_nmea_time(raw_time):
-    """Převede NMEA čas 'hhmmss.ss' na čitelný formát 'HH:MM:SS'."""
     if not raw_time or len(raw_time) < 6:
         return "--:--:--"
     return f"{raw_time[0:2]}:{raw_time[2:4]}:{raw_time[4:6]}"
@@ -244,7 +249,7 @@ def parse_nmea(sentence, gps_data):
 
 
 # ==============================================================================
-# 3. VYKRESLOVÁNÍ IKON A DAT NA OLED (bez překrývání)
+# 3. VYKRESLOVÁNÍ IKON A OBRAZOVEK NA OLED
 # ==============================================================================
 def rssi_to_bars(rssi):
     if rssi is None:
@@ -297,18 +302,9 @@ def draw_gps_icon(oled, connected):
 
 
 def draw_sensor_data(oled, gps_data, gps_active, imu_data):
-    """
-    Vykreslí data z GPS a MPU6050 do pevných nekonfliktních řádků (max 16 znaků/řádek):
-      y = 16: GPS řádek 1 (šířka / UTC čas + počet satelitů)
-      y = 26: GPS řádek 2 (délka / rychlost + stav příjmu)
-      y = 37: dělící čára
-      y = 41: Akcelerometr (X, Y, Z)
-      y = 52: Gyroskop (X, Y, Z)
-    """
-    # Vymazání celé plochy pod horní stavovou lištou
+    """REŽIM 0: Textová data z GPS a MPU6050."""
     oled.fill_rect(0, HEADER_LINE_Y + 2, OLED_WIDTH, OLED_HEIGHT - (HEADER_LINE_Y + 2), 0)
 
-    # --- SEKCE GPS (2 řádky po max. 16 znacích = 128 px) ---
     lat = gps_data["latitude"]
     lon = gps_data["longitude"]
     sats_used = gps_data["satellites"] if gps_data["satellites"] is not None else 0
@@ -320,23 +316,15 @@ def draw_sensor_data(oled, gps_data, gps_active, imu_data):
         oled.text("GPS: Odpojeno", 0, 16)
         oled.text("Cekam na UART...", 0, 26)
     elif lat is not None and lon is not None:
-        # Máme platný GPS fix -> zobrazíme souřadnice, satelity a rychlost
-        # Formát: "La:49.1951 S:06" (15 znaků = 120 px, žádné překrytí)
         oled.text(f"La:{lat:7.4f} S:{sats_used:02d}", 0, 16)
-        # Formát: "Lo:16.6068 000km" (16 znaků = 128 px)
         oled.text(f"Lo:{lon:7.4f} {spd:3.0f}km", 0, 26)
     else:
-        # GPS komunikuje, ale ještě nemá fix -> vypíšeme UTC čas, satelity a typ věty
-        # Formát: "UTC 12:34:56 GGA" (16 znaků = 128 px)
         msg = gps_data["last_sentence"] or "---"
         oled.text(f"UTC {utc_str} {msg}", 0, 16)
-        # Formát: "Sat:0/08 NoFix" (14 znaků = 112 px)
         oled.text(f"Sat:{sats_used}/{sats_view:02d} NoFix", 0, 26)
 
-    # Středová dělící čára mezi GPS a IMU
     oled.hline(0, 37, OLED_WIDTH, 1)
 
-    # --- SEKCE MPU6050 (2 řádky po max. 16 znacích) ---
     if imu_data is not None:
         ax = imu_data["accel"]["x"]
         ay = imu_data["accel"]["y"]
@@ -345,13 +333,86 @@ def draw_sensor_data(oled, gps_data, gps_active, imu_data):
         gy = imu_data["gyro"]["y"]
         gz = imu_data["gyro"]["z"]
 
-        # Formát: "A: 0.1 -0.2  9.8" (16 znaků = 128 px)
         oled.text(f"A:{ax:4.1f} {ay:4.1f} {az:4.1f}", 0, 41)
-        # Formát: "G:   0   -1    2" (16 znaků = 128 px)
         oled.text(f"G:{gx:4.0f} {gy:4.0f} {gz:4.0f}", 0, 52)
     else:
         oled.text("IMU: Odpojeno", 0, 41)
         oled.text("Hledam I2C...", 0, 52)
+
+
+def draw_motion_arrow_screen(oled, gps_data, imu_data):
+    """
+    REŽIM 1 (po stisku tlačítka GP17):
+    Zachová horní ikony GPS/Wi-Fi, smaže datovou plochu a uprostřed displeje
+    vykreslí šipku směru pohybu v osách X a Y + aktuální nadmořskou výšku (Z) z GPS.
+    """
+    # Vymazání pouze oblasti pod stavovou lištou (y = 15..63), ikony zůstávají
+    oled.fill_rect(0, HEADER_LINE_Y + 2, OLED_WIDTH, OLED_HEIGHT - (HEADER_LINE_Y + 2), 0)
+
+    # Střed oblasti pod stavovou lištou (x = 64, y = 39)
+    cx = OLED_WIDTH // 2
+    cy = 39
+
+    # Jemný středový křížek pro orientaci
+    oled.pixel(cx, cy, 1)
+    oled.pixel(cx - 2, cy, 1)
+    oled.pixel(cx + 2, cy, 1)
+    oled.pixel(cx, cy - 2, 1)
+    oled.pixel(cx, cy + 2, 1)
+
+    # Výpis nadmořské výšky (osa Z / altitude z GPS) v levém dolním rohu
+    alt = gps_data["altitude"]
+    if alt is not None:
+        oled.text(f"Alt:{alt:.1f}m", 0, 55)
+    else:
+        oled.text("Alt: --- m", 0, 55)
+
+    # Vykreslení šipky pohybu v ose X a Y podle MPU6050
+    if imu_data is None:
+        oled.text("IMU Chyba", 30, 35)
+        return
+
+    ax = imu_data["accel"]["x"]
+    ay = imu_data["accel"]["y"]
+
+    # Velikost zrychlení v rovině stolu (X, Y)
+    magnitude = math.sqrt(ax * ax + ay * ay)
+
+    # Pásmo necitlivosti (ignoruje drobný šum senzoru v klidu na stole)
+    if magnitude < 0.35:
+        # V klidu vykreslíme jen malý středový kroužek/čtvereček
+        oled.rect(cx - 2, cy - 2, 5, 5, 1)
+        return
+
+    # Přepočet zrychlení (m/s^2) na délku šipky v pixelech (max. poloměr 20 px)
+    max_len = 20
+    length = min(max_len, max(6, int(magnitude * 5.0)))
+
+    # Jednotkový vektor směru (osa Y displeje roste směrem dolů -> proto -ay)
+    ux = ax / magnitude
+    uy = -ay / magnitude
+
+    # Koncový bod šipky (hrot)
+    ex = int(round(cx + ux * length))
+    ey = int(round(cy + uy * length))
+
+    # Hlavní tělo šipky (zesílené pro dobrou čitelnost)
+    oled.line(cx, cy, ex, ey, 1)
+
+    # Výpočet dvou ramen špičky šipky (úhel cca 30° zpět od hrotu)
+    head_len = 6
+    angle = math.atan2(uy, ux)
+    left_angle = angle + 2.6   # +150°
+    right_angle = angle - 2.6  # -150°
+
+    lx = int(round(ex + math.cos(left_angle) * head_len))
+    ly = int(round(ey + math.sin(left_angle) * head_len))
+    rx = int(round(ex + math.cos(right_angle) * head_len))
+    ry = int(round(ey + math.sin(right_angle) * head_len))
+
+    oled.line(ex, ey, lx, ly, 1)
+    oled.line(ex, ey, rx, ry, 1)
+    oled.line(lx, ly, rx, ry, 1)  # Uzavřený trojúhelníkový hrot šipky
 
 
 # ==============================================================================
@@ -360,10 +421,11 @@ def draw_sensor_data(oled, gps_data, gps_active, imu_data):
 def main():
     global is_wifi_connected, blink_state
 
-    # Inicializace I2C0 (GP4 = SDA, GP5 = SCL) a UART0 (GP0 = TX, GP1 = RX)
+    # Inicializace sběrnic a tlačítka (GP17 proti GND s interním PULL_UP)
     i2c = I2C(0, sda=Pin(I2C_SDA_PIN), scl=Pin(I2C_SCL_PIN), freq=100_000)
     oled = SH1106_I2C(i2c)
     gps_uart = UART(0, baudrate=9600, tx=Pin(UART_TX_PIN), rx=Pin(UART_RX_PIN))
+    button = Pin(BUTTON_PIN, Pin.IN, Pin.PULL_UP)
 
     # Inicializace a kalibrace MPU6050
     imu = init_mpu6050(i2c)
@@ -371,7 +433,7 @@ def main():
         oled.fill(0)
         oled.text("Kalibrace IMU...", 0, 28)
         oled.show()
-        imu.calibrate(samples=50, delay_ms=10)
+        imu.calibrate(samples=60, delay_ms=10)
 
     # Úvodní vykreslení stavové lišty
     oled.fill(0)
@@ -397,15 +459,32 @@ def main():
     gps_data = create_gps_data()
     nmea_buffer = b""
 
+    # Stav obrazovky: 0 = textová data GPS/IMU, 1 = grafická šipka pohybu + výška
+    display_mode = 0
+    last_button_state = 1
+    last_button_time = 0
+
     last_wifi_check = time.ticks_add(time.ticks_ms(), -WIFI_CHECK_MS)
     last_display_update = time.ticks_ms()
     last_imu_retry = time.ticks_ms()
 
-    print("Spoustim system (Ctrl+C pro ukonceni)...")
+    print("Spoustim system (stisknete tlacitko GP17 pro prepnuti obrazovky)...")
 
     try:
         while True:
             now = time.ticks_ms()
+
+            # 0. Obsluha tlačítka na GP17 (sestupná hrana 1 -> 0 + debounce)
+            current_button = button.value()
+            if current_button == 0 and last_button_state == 1:
+                if time.ticks_diff(now, last_button_time) > DEBOUNCE_MS:
+                    last_button_time = now
+                    display_mode = 1 - display_mode  # Přepne 0 <-> 1
+                    print("Prepnuti obrazovky na rezim:", display_mode)
+                    # Okamžité promazání datové části displeje při přepnutí
+                    oled.fill_rect(0, HEADER_LINE_Y + 2, OLED_WIDTH, OLED_HEIGHT - (HEADER_LINE_Y + 2), 0)
+                    oled.show()
+            last_button_state = current_button
 
             # 1. Průběžné čtení a parsování NMEA zpráv z GPS (UART0)
             if gps_uart.any():
@@ -425,7 +504,7 @@ def main():
                 last_imu_retry = now
                 imu = init_mpu6050(i2c)
                 if imu is not None:
-                    imu.calibrate(samples=30, delay_ms=5)
+                    imu.calibrate(samples=40, delay_ms=5)
 
             # 3. Kontrola Wi-Fi každých 5 sekund
             if time.ticks_diff(now, last_wifi_check) >= WIFI_CHECK_MS:
@@ -446,7 +525,7 @@ def main():
                 else:
                     is_wifi_connected = False
 
-            # 4. Čtení z MPU6050 a aktualizace displeje každých 250 ms
+            # 4. Čtení z MPU6050 a aktualizace displeje každých 100 ms
             if time.ticks_diff(now, last_display_update) >= DISPLAY_UPDATE_MS:
                 last_display_update = now
 
@@ -462,9 +541,14 @@ def main():
                         imu_data = imu.read()
                     except Exception as e:
                         print("Chyba cteni MPU6050:", e)
-                        imu = None  # Spustí automatické znovupřipojení
+                        imu = None
 
-                draw_sensor_data(oled, gps_data, gps_active, imu_data)
+                # Vykreslení zvoleného režimu pod stavovou lištu
+                if display_mode == 0:
+                    draw_sensor_data(oled, gps_data, gps_active, imu_data)
+                else:
+                    draw_motion_arrow_screen(oled, gps_data, imu_data)
+
                 oled.show()
 
             time.sleep_ms(10)
