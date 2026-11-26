@@ -18,14 +18,18 @@ periodically scheduled operations based on
 
 | Task | Interval | Description |
 |------|----------|-------------|
-| GPS data reception | Every loop (~10 ms minimum) | Reads available NMEA data through UART0 and checks GPS fix validity. |
-| IMU measurement | 100 ms (10 Hz) | Reads acceleration and angular velocity from MPU-6050 via I2C0. |
-| OLED update | 500 ms (2 Hz) | Displays current GPS or IMU measurements. |
-| Display page switching | 5000 ms (5 s) | Automatically switches between GPS and IMU screens. |
-| Serial terminal output | 1000 ms (1 Hz) | Prints GPS and IMU measurements for debugging. |
-| GPS fix timeout | 3000 ms (3 s) | Invalidates GPS measurements if no recent valid fix is received. |
-| Gyroscope calibration | Once at startup (~2 s) | Calculates gyroscope offsets while the sensor remains stationary. |
-| Main loop delay | 10 ms | Reduces unnecessary CPU usage. |
+| GPS data processing | Every main loop iteration | Processes incoming NMEA data. |
+| IMU measurement | 20 ms (50 Hz) | Reads acceleration and angular velocity from MPU-6050. |
+| OLED update | 150 ms (~6.67 Hz) | Updates sensor data, navigation and status icons. |
+| Wi-Fi connection check | 5000 ms (5 s) | Checks connection status and attempts reconnection if necessary. |
+| Wi-Fi icon blinking | 750 ms | Indicates disconnected Wi-Fi using a periodic timer. |
+| GPS data timeout | 3000 ms (3 s) | Determines whether received GPS data is recent. |
+| Button debounce | 250 ms | Prevents unintended multiple screen switches. |
+| IMU reconnection attempt | 2000 ms (2 s) | Attempts to restore communication with MPU-6050. |
+| Initial IMU calibration | Once at startup (~600 ms) | Calculates offsets using 60 samples with a 10 ms delay. |
+| IMU recalibration | After reconnection (~200 ms) | Uses 40 samples with a 5 ms delay. |
+| Main loop delay | 5 ms | Reduces unnecessary CPU usage. |
+
 
 ### Member roles
 
@@ -35,21 +39,20 @@ periodically scheduled operations based on
 
 ###  Timing and Concurrency
 
-The program uses a cooperative scheduling approach
-without threads or asynchronous tasks.
+The application uses cooperative task scheduling based on
+`time.ticks_ms()` and `time.ticks_diff()`.
 
-The main loop checks elapsed time using
-  `time.ticks_ms()` and `time.ticks_diff()`.
+Individual operations are executed at predefined intervals
+within the main loop. A separate periodic hardware timer
+controls the blinking Wi-Fi status icon.
 
-This allows GPS reception, IMU measurements and
-OLED updates to run at different intervals.
+The display mode is controlled manually using a push button
+connected to GPIO17.
 
-GPS data is processed continuously when available,
-while IMU readings and display updates are performed
-periodically.
+The specified intervals represent nominal software timing.
+Actual execution times may vary depending on communication,
+sensor calibration and Wi-Fi reconnection.
 
-The gyroscope calibration is performed once during
-startup and temporarily blocks the main loop.
 
 ###  Error Handling
 
