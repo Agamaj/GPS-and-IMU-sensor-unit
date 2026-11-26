@@ -1,10 +1,10 @@
 # GPS and IMU Sensor Unit
 
-## Device funcionality
+### Device funcionality
 
 Every second, MCU reads sensor raw data and computes exact location, acceleration/speed, direction of the movement. Results will be shown on the OLED display clearly. We also may add a small arrow showing a direction of the movement or a GPS and WiFi sign for indicating network stability - all of this is optional and doesn't need to be included in the code.
 
-##  Program Functionality and Timing
+###  Program Functionality and Timing
 
 The main application integrates the GPS NEO-6M,
 MPU-6050 and SSD1306 OLED display using MicroPython
@@ -26,6 +26,12 @@ periodically scheduled operations based on
 | GPS fix timeout | 3000 ms (3 s) | Invalidates GPS measurements if no recent valid fix is received. |
 | Gyroscope calibration | Once at startup (~2 s) | Calculates gyroscope offsets while the sensor remains stationary. |
 | Main loop delay | 10 ms | Reduces unnecessary CPU usage. |
+
+### Member roles
+
+Tadeas Klimt -  oled.py -> grafical user interface + main.py responsibility, overall repository 
+Josef Cvejn  -  gyros.py -> gyroscope calibration & library + repository (components and links)
+Pavel Curda  -  gps.py -> gps module parsing, calibration & library, schematic
 
 ###  Timing and Concurrency
 
