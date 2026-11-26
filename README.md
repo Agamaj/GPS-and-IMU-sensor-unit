@@ -231,8 +231,23 @@ The main application is responsible for:
 The main program combines the individual modules into one application.
 
 **Main Python Code:** [main.py](LINK_TO_MAIN_CODE)
+________________________________________
 
+##  Week 4 - System Verification
 
+###  Verification Plan
+
+###  Functional Testing
+
+###  Timing Verification
+
+###  System Stability
+
+###  Test Results
+
+###  Identified Issues and Solutions
+
+###  Verification Conclusion
 
 
 
