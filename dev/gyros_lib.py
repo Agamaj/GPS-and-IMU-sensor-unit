@@ -11,6 +11,7 @@ class MPU6050:
         self.gyro_offset = [0.0, 0.0, 0.0]
         self.gravity = [0.0, 0.0, 9.80665]
         self.linear_accel = [0.0, 0.0, 0.0]
+        self.velocity = [0.0, 0.0]
         self.last_update_ms = time.ticks_ms()
 
         # Probuzení senzoru
@@ -27,7 +28,7 @@ class MPU6050:
         return struct.unpack(">hhhhhhh", data)
 
     def calibrate(self, samples=60, delay_ms=10):
-        """Změří klidový offset gyroskopu a počáteční směr gravitace."""
+        """Změří klidový offset gyroskopu a počáteční vektor gravitace na stole."""
         g_offsets = [0.0, 0.0, 0.0]
         grav_acc = [0.0, 0.0, 0.0]
 
@@ -45,14 +46,11 @@ class MPU6050:
         self.gravity = [val / samples for val in grav_acc]
         self.gyro_offset = [val / samples for val in g_offsets]
         self.linear_accel = [0.0, 0.0, 0.0]
+        self.velocity = [0.0, 0.0]
         self.last_update_ms = time.ticks_ms()
         return self.gyro_offset
 
     def read(self):
-        """
-        Přečte senzor, aktualizuje odhad gravitace pomocí komplementárního filtru
-        a vrátí surové zrychlení, čisté lineární zrychlení (bez gravitace) a gyroskop.
-        """
         now = time.ticks_ms()
         dt = time.ticks_diff(now, self.last_update_ms) / 1000.0
         self.last_update_ms = now
@@ -71,7 +69,12 @@ class MPU6050:
         gyro_y = (gy / 131.0) - self.gyro_offset[1]
         gyro_z = (gz / 131.0) - self.gyro_offset[2]
 
-        # Rotace vektoru gravitace podle gyroskopu (rad/s)
+        # Detekce klidového stavu (neotáčí se a celkové zrychlení odpovídá 1g)
+        gyro_mag = math.sqrt(gyro_x * gyro_x + gyro_y * gyro_y + gyro_z * gyro_z)
+        acc_mag = math.sqrt(raw_ax * raw_ax + raw_ay * raw_ay + raw_az * raw_az)
+        is_stationary = (gyro_mag < 4.0) and (abs(acc_mag - 9.80665) < 0.35)
+
+        # Rotace vektoru gravitace podle gyroskopu
         wx = math.radians(gyro_x)
         wy = math.radians(gyro_y)
         wz = math.radians(gyro_z)
@@ -81,23 +84,30 @@ class MPU6050:
         g_gyro_y = gy_est - (wz * gx_est - wx * gz_est) * dt
         g_gyro_z = gz_est - (wx * gy_est - wy * gx_est) * dt
 
-        # Komplementární filtr (odfiltruje vliv náklonu i dlouhodobý drift)
-        alpha = 0.94
+        # Při pohybu držíme gravitaci pevnou (0.995), v klidu dorovnáme drift (0.85)
+        alpha = 0.85 if is_stationary else 0.995
         gx_est = alpha * g_gyro_x + (1.0 - alpha) * raw_ax
         gy_est = alpha * g_gyro_y + (1.0 - alpha) * raw_ay
         gz_est = alpha * g_gyro_z + (1.0 - alpha) * raw_az
         self.gravity = [gx_est, gy_est, gz_est]
 
-        # Čisté lineární zrychlení pohybu po odečtení gravitace
+        # Čisté lineární zrychlení po odečtení gravitace (v klidu = 0, 0, 0)
         lin_x = raw_ax - gx_est
         lin_y = raw_ay - gy_est
         lin_z = raw_az - gz_est
 
-        # Jemné vyhlazení proti vibracím
-        smooth = 0.65
-        self.linear_accel[0] = (1.0 - smooth) * self.linear_accel[0] + smooth * lin_x
-        self.linear_accel[1] = (1.0 - smooth) * self.linear_accel[1] + smooth * lin_y
-        self.linear_accel[2] = (1.0 - smooth) * self.linear_accel[2] + smooth * lin_z
+        self.linear_accel = [lin_x, lin_y, lin_z]
+
+        # Výpočet směru a intenzity pohybu (integrace s útlumem proti brzdnému kmitu)
+        ax_eff = lin_x if abs(lin_x) > 0.25 else 0.0
+        ay_eff = lin_y if abs(lin_y) > 0.25 else 0.0
+
+        if is_stationary and ax_eff == 0.0 and ay_eff == 0.0:
+            self.velocity[0] *= 0.65
+            self.velocity[1] *= 0.65
+        else:
+            self.velocity[0] = self.velocity[0] * 0.90 + ax_eff * dt
+            self.velocity[1] = self.velocity[1] * 0.90 + ay_eff * dt
 
         return {
             "accel": {
@@ -106,9 +116,13 @@ class MPU6050:
                 "z": raw_az
             },
             "linear_accel": {
-                "x": self.linear_accel[0],
-                "y": self.linear_accel[1],
-                "z": self.linear_accel[2]
+                "x": lin_x,
+                "y": lin_y,
+                "z": lin_z
+            },
+            "velocity": {
+                "x": self.velocity[0],
+                "y": self.velocity[1]
             },
             "gyro": {
                 "x": gyro_x,
