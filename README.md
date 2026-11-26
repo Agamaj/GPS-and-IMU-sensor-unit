@@ -238,20 +238,94 @@ ________________________________________
 
 ##  System Verification
 
-###  Verification Plan
+###  Objective
 
-###  Functional Testing
+The objective of the fourth week is to verify the
+functionality, reliability and timing of the integrated
+GPS and IMU Sensor Unit.
 
-###  Timing Verification
+The system combines GPS navigation, inertial measurements,
+Wi-Fi connectivity and an interactive OLED user interface
+on the Raspberry Pi Pico W.
 
-###  System Stability
+###  Implemented System Features
 
-###  Test Results
+-	GPS data acquisition and processing.
+-	Three-axis acceleration and angular velocity measurement.
+-	Automatic gyroscope calibration.
+-	GPS-based navigation and altitude processing.
+-	OLED visualization of sensor and navigation data.
+-	Manual display mode switching using GPIO17.
+- Wi-Fi connection monitoring.
+-	Wi-Fi signal strength indication.
+-	Automatic Wi-Fi reconnection attempts.
+-	Automatic MPU-6050 reconnection and recalibration.
+-	GPS data freshness monitoring.
+-	Controlled system shutdown.
 
-###  Identified Issues and Solutions
+###  Software Architecture
+
+The application uses a modular software architecture.
+
+| Module | Function |
+|--------|----------|
+| `main.py` | System initialization, task scheduling and integration. |
+| `gyros_lib.py` | MPU-6050 initialization, calibration and measurements. |
+| `gps_lib.py` | GPS communication and data processing. |
+| `oled_lib.py` | OLED visualization and navigation interface. |
+| `wifi_utils.py` | Wi-Fi connection and disconnection management. |
+| `config.py` | Wi-Fi configuration parameters. |
+
+###  Functional Verification
+
+The following tests are used to verify the integrated
+system functionality.
+
+| Test | Expected Result | Status |
+|------|-----------------|--------|
+| System initialization | All available modules initialize correctly. | Pending |
+| IMU calibration | Gyroscope offsets are calculated. | Pending |
+| IMU measurement | Acceleration and angular velocity respond to movement. | Pending |
+| GPS reception | Incoming GPS data is processed correctly. | Pending |
+| GPS fix | Valid navigation data becomes available. | Pending |
+| GPS timeout | Outdated GPS data is identified. | Pending |
+| OLED visualization | Sensor and navigation data are displayed correctly. | Pending |
+| Button control | Display mode changes after pressing the button. | Pending |
+| Wi-Fi connection | The device connects to the configured network. | Pending |
+| Wi-Fi signal indication | Signal strength is displayed correctly. | Pending |
+| Wi-Fi disconnection | The Wi-Fi icon starts blinking. | Pending |
+| Wi-Fi reconnection | The system attempts to restore the connection. | Pending |
+| IMU reconnection | The sensor is reinitialized and recalibrated. | Pending |
+| System stability | The application operates without unexpected interruption. | Pending |
+
+###  Error Handling and Recovery
+
+The application includes mechanisms designed to improve
+system reliability:
+
+-	IMU communication errors are detected and reported.
+-	Unavailable IMU measurements are cleared.
+-	Disconnected IMU sensors are periodically reinitialized.
+-	Wi-Fi connection errors are reported.
+-	Wi-Fi reconnection is attempted automatically.
+-	GPS data freshness is monitored using a timeout.
+-	Button input is protected by software debouncing.
+
+###  Final Integrated Application
+
+The main application coordinates all software modules
+and manages communication between the hardware components.
+
+**Main Python Code:** [main.py](LINK_TO_MAIN_CODE)
 
 ###  Verification Conclusion
 
+The integrated application includes sensor measurements,
+navigation processing, Wi-Fi monitoring and an interactive
+display interface.
+
+Final verification results will be documented after
+completion of the hardware testing.
 
 
 
