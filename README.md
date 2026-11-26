@@ -239,6 +239,7 @@ ________________________________________
 ##  System Verification
 
 ###  Objective
+________________________________________
 
 The objective of the fourth week is to verify the
 functionality, reliability and timing of the integrated
@@ -248,6 +249,7 @@ Wi-Fi connectivity and an interactive OLED user interface
 on the Raspberry Pi Pico W.
 
 ###  Implemented System Features
+________________________________________
 
 -	GPS data acquisition and processing.
 -	Three-axis acceleration and angular velocity measurement.
@@ -263,6 +265,7 @@ on the Raspberry Pi Pico W.
 -	Controlled system shutdown.
 
 ###  Software Architecture
+________________________________________
 
 The application uses a modular software architecture.
 
@@ -276,6 +279,7 @@ The application uses a modular software architecture.
 | `config.py` | Wi-Fi configuration parameters. |
 
 ###  Functional Verification
+________________________________________
 
 The following tests are used to verify the integrated
 system functionality.
@@ -298,6 +302,7 @@ system functionality.
 | System stability | The application operates without unexpected interruption. | Pending |
 
 ###  Error Handling and Recovery
+________________________________________
 
 The application includes mechanisms designed to improve
 system reliability:
@@ -311,6 +316,7 @@ system reliability:
 -	Button input is protected by software debouncing.
 
 ###  Final Integrated Application
+________________________________________
 
 The main application coordinates all software modules
 and manages communication between the hardware components.
@@ -318,6 +324,7 @@ and manages communication between the hardware components.
 **Main Python Code:** [main.py](LINK_TO_MAIN_CODE)
 
 ###  Verification Conclusion
+________________________________________
 
 The integrated application includes sensor measurements,
 navigation processing, Wi-Fi monitoring and an interactive
