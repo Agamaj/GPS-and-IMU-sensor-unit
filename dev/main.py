@@ -6,9 +6,9 @@ import config
 
 from oled_lib import OledDisplay
 from gyros_lib import init_mpu6050
-import gps_lib  # Automaticky inicializuje UART(0, tx=0, rx=1, rxbuf=2048)
+import gps_lib
 
-# Hardwarové piny podle schématu (UART0 už řeší gps_lib)
+# Hardwarové piny podle schématu (UART0 inicializuje gps_lib)
 I2C_SDA_PIN = 4
 I2C_SCL_PIN = 5
 BUTTON_PIN = 17
@@ -16,7 +16,7 @@ BUTTON_PIN = 17
 # Časové intervaly (ms)
 WIFI_CHECK_MS = 5000
 IMU_UPDATE_MS = 20
-DISPLAY_UPDATE_MS = 100
+DISPLAY_UPDATE_MS = 150
 GPS_TIMEOUT_MS = 3000
 DEBOUNCE_MS = 250
 
@@ -81,7 +81,7 @@ def main():
                     display.show()
             last_button_state = current_button
 
-            # 2. Průběžné čtení NMEA dat přes váš gps_lib
+            # 2. Průběžné čtení NMEA dat přes gps_lib
             gps_lib.update()
 
             # 3. Pokus o znovupřipojení MPU6050, pokud vypadl
@@ -91,7 +91,7 @@ def main():
                 if imu is not None:
                     imu.calibrate(samples=40, delay_ms=5)
 
-            # 4. Rychlé čtení MPU6050 (50 Hz) pro výpočet lineárního zrychlení
+            # 4. Čtení MPU6050
             if imu is not None and time.ticks_diff(now, last_imu_update) >= IMU_UPDATE_MS:
                 last_imu_update = now
                 try:
@@ -118,7 +118,7 @@ def main():
                 else:
                     is_wifi_connected = False
 
-            # 6. Obnovení displeje (100 ms)
+            # 6. Aktualizace výpočtů navigace a vykreslení displeje
             if time.ticks_diff(now, last_display_update) >= DISPLAY_UPDATE_MS:
                 last_display_update = now
 
@@ -130,12 +130,15 @@ def main():
                 )
                 gps_fixed = gps_lib.has_fix()
 
+                # Průběžný výpočet směru pohybu a nadmořské výšky z GPS
+                display.update_navigation(gps_data, gps_fixed)
+                display.draw_time(gps_data, gps_active)
                 display.draw_gps_icon(gps_active)
 
                 if display_mode == 0:
                     display.draw_sensor_data(gps_data, gps_active, gps_fixed, imu_data)
                 else:
-                    display.draw_motion_arrow_screen(gps_data, imu_data)
+                    display.draw_gps_arrow_screen(gps_data, gps_fixed)
 
                 display.show()
 
