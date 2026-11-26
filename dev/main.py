@@ -1,20 +1,20 @@
 from machine import I2C, Pin, Timer
 import network
 import time
-import wifi_utils
-import config
 
 from oled_lib import OledDisplay
 from gyros_lib import init_mpu6050
 import gps_lib
 
-# Hardwarové piny podle schématu (UART0 inicializuje gps_lib)
+SSID = "UREL-SC661-V-2.4G"
+PSWD = "TVOJE_HESLO"
+
 I2C_SDA_PIN = 4
 I2C_SCL_PIN = 5
 BUTTON_PIN = 17
 
-# Časové intervaly (ms)
 WIFI_CHECK_MS = 5000
+WIFI_CONNECT_WAIT_MS = 8000
 IMU_UPDATE_MS = 20
 DISPLAY_UPDATE_MS = 150
 GPS_TIMEOUT_MS = 3000
@@ -22,10 +22,35 @@ DEBOUNCE_MS = 250
 
 is_wifi_connected = False
 blink_state = True
+wifi_bars = 0
+
+
+def connect_wifi(wlan, ssid, password, timeout_ms=WIFI_CONNECT_WAIT_MS):
+    if not ssid:
+        print("Wi-Fi: chybi SSID")
+        return False
+
+    if wlan.isconnected():
+        return True
+
+    print(f"Wi-Fi: pripojuji k {ssid}...")
+    wlan.disconnect()
+    wlan.connect(ssid, password)
+
+    start = time.ticks_ms()
+    while not wlan.isconnected() and time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
+        time.sleep_ms(200)
+
+    if wlan.isconnected():
+        print("Wi-Fi: pripojeno", wlan.ifconfig())
+        return True
+
+    print("Wi-Fi: neuspesne, status:", wlan.status())
+    return False
 
 
 def main():
-    global is_wifi_connected, blink_state
+    global is_wifi_connected, blink_state, wifi_bars
 
     i2c = I2C(0, sda=Pin(I2C_SDA_PIN), scl=Pin(I2C_SCL_PIN), freq=100_000)
     display = OledDisplay(i2c)
@@ -46,8 +71,6 @@ def main():
         global blink_state
         if not is_wifi_connected:
             blink_state = not blink_state
-            display.draw_wifi_icon(4, visible=blink_state)
-            display.show()
 
     blink_timer = Timer()
     blink_timer.init(period=750, mode=Timer.PERIODIC, callback=blink_callback)
@@ -107,16 +130,17 @@ def main():
                 if not wifi.isconnected():
                     is_wifi_connected = False
                     try:
-                        wifi_utils.connect(wifi, config.SSID, config.PSWD)
+                        connect_wifi(wifi, SSID, PSWD)
                     except Exception as e:
                         print("Chyba Wi-Fi:", e)
 
                 if wifi.isconnected():
                     is_wifi_connected = True
-                    bars = display.rssi_to_bars(wifi.status("rssi"))
-                    display.draw_wifi_icon(bars, visible=True)
+                    blink_state = True
+                    wifi_bars = display.rssi_to_bars(wifi.status("rssi"))
                 else:
                     is_wifi_connected = False
+                    wifi_bars = 4
 
             # 6. Aktualizace výpočtů navigace a vykreslení displeje
             if time.ticks_diff(now, last_display_update) >= DISPLAY_UPDATE_MS:
@@ -130,10 +154,10 @@ def main():
                 )
                 gps_fixed = gps_lib.has_fix()
 
-                # Průběžný výpočet směru pohybu a nadmořské výšky z GPS
                 display.update_navigation(gps_data, gps_fixed)
                 display.draw_time(gps_data, gps_active)
                 display.draw_gps_icon(gps_active)
+                display.draw_wifi_icon(wifi_bars, visible=blink_state if not is_wifi_connected else True)
 
                 if display_mode == 0:
                     display.draw_sensor_data(gps_data, gps_active, gps_fixed, imu_data)
@@ -148,7 +172,8 @@ def main():
         print("\nProgram ukoncen uzivatelem.")
     finally:
         blink_timer.deinit()
-        wifi_utils.disconnect(wifi)
+        wifi.disconnect()
+        wifi.active(False)
         display.poweroff()
 
 
