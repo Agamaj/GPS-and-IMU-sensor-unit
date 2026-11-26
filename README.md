@@ -243,7 +243,6 @@ ________________________________________
 The objective of the fourth week is to verify the
 functionality, reliability and timing of the integrated
 GPS and IMU Sensor Unit.
-
 The system combines GPS navigation, inertial measurements,
 Wi-Fi connectivity and an interactive OLED user interface
 on the Raspberry Pi Pico W.
@@ -323,7 +322,6 @@ and manages communication between the hardware components.
 The integrated application includes sensor measurements,
 navigation processing, Wi-Fi monitoring and an interactive
 display interface.
-
 Final verification results will be documented after
 completion of the hardware testing.
 
