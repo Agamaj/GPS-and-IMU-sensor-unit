@@ -29,9 +29,9 @@ periodically scheduled operations based on
 
 ### Member roles
 
-- Tadeas Klimt -  oled.py -> grafical user interface + main.py responsibility, overall repository 
-- Josef Cvejn  -  gyros.py -> gyroscope calibration & library + repository (components and links)
-- Pavel Curda  -  gps.py -> gps module parsing, calibration & library + main device schematic
+- Tadeas Klimt -  oled_lib.py -> Graphical user interface + main.py responsibility, overall repository. 
+- Josef Cvejn  -  gyros_lib.py -> Gyroscope calibration & library + repository (components and links).
+- Pavel Curda  -  gps_lib.py -> GPS module initialization and parsing library, main device schematic.
 
 ###  Timing and Concurrency
 
