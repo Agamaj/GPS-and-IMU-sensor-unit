@@ -3,17 +3,21 @@ import math
 
 OLED_WIDTH = 128
 OLED_HEIGHT = 64
-
-ICON_X = OLED_WIDTH - 14  # x = 114
-ICON_Y = 0                # y = 0
-GPS_X = ICON_X - 27       # x = 87
-GPS_Y = 2                 # y = 2
 HEADER_LINE_Y = 13
+ICON_X = OLED_WIDTH - 14
+GPS_X = ICON_X - 27
+MIN_MOVE_M = 2.5
+DIRS = ("S ", "SV", "V ", "JV", "J ", "JZ", "Z ", "SZ")
 
 
 class OledDisplay:
     def __init__(self, i2c):
         self.oled = SH1106_I2C(i2c)
+        self.ref_lat = None
+        self.ref_lon = None
+        self.bearing = None
+        self.filtered_alt = None
+        self.base_alt = None
 
     @staticmethod
     def rssi_to_bars(rssi):
@@ -22,27 +26,43 @@ class OledDisplay:
         rssi = round(rssi)
         if rssi >= -55:
             return 4
-        elif rssi >= -67:
+        if rssi >= -67:
             return 3
-        elif rssi >= -78:
+        if rssi >= -78:
             return 2
-        else:
-            return 1
+        return 1
 
-    @staticmethod
-    def _format_time(raw_time):
-        if not raw_time or len(raw_time) < 6:
-            return "--:--:--"
-        return f"{raw_time[0:2]}:{raw_time[2:4]}:{raw_time[4:6]}"
+    def update_navigation(self, gps_data, has_fix):
+        if not has_fix:
+            return
+
+        raw_alt = gps_data.get("altitude")
+        if raw_alt is not None:
+            self.filtered_alt = raw_alt if self.filtered_alt is None else 0.8 * self.filtered_alt + 0.2 * raw_alt
+            if self.base_alt is None:
+                self.base_alt = self.filtered_alt
+
+        lat = gps_data.get("latitude")
+        lon = gps_data.get("longitude")
+        if lat is None or lon is None:
+            return
+
+        if self.ref_lat is None or self.ref_lon is None:
+            self.ref_lat, self.ref_lon = lat, lon
+            return
+
+        mean_lat = math.radians((self.ref_lat + lat) * 0.5)
+        dy = math.radians(lat - self.ref_lat) * 6371000.0
+        dx = math.radians(lon - self.ref_lon) * 6371000.0 * math.cos(mean_lat)
+        if math.sqrt(dx * dx + dy * dy) >= MIN_MOVE_M:
+            self.bearing = (math.degrees(math.atan2(dx, dy)) + 360.0) % 360.0
+            self.ref_lat, self.ref_lon = lat, lon
 
     def clear_all(self):
         self.oled.fill(0)
 
     def clear_body(self):
-        """Vymaže pouze datovou oblast pod horní stavovou lištou (ikony zůstanou)."""
-        self.oled.fill_rect(
-            0, HEADER_LINE_Y + 2, OLED_WIDTH, OLED_HEIGHT - (HEADER_LINE_Y + 2), 0
-        )
+        self.oled.fill_rect(0, HEADER_LINE_Y + 2, OLED_WIDTH, OLED_HEIGHT - (HEADER_LINE_Y + 2), 0)
 
     def draw_header_line(self):
         self.oled.hline(0, HEADER_LINE_Y, OLED_WIDTH, 1)
@@ -52,50 +72,48 @@ class OledDisplay:
         self.oled.text(text, x, y)
         self.oled.show()
 
+    def draw_time(self, gps_data, gps_active):
+        self.oled.fill_rect(0, 0, 70, 12, 0)
+        t = gps_data.get("time") if gps_active else None
+        if t and len(t) >= 6:
+            self.oled.text(f"{t[0:2]}:{t[2:4]}:{t[4:6]}", 0, 2)
+
     def draw_wifi_icon(self, bars, visible=True):
-        self.oled.fill_rect(ICON_X - 1, ICON_Y, 16, 12, 0)
+        self.oled.fill_rect(ICON_X - 1, 0, 16, 12, 0)
         if not visible or bars <= 0:
             return
-
         cx = ICON_X + 6
-        y = ICON_Y
-
         if bars >= 1:
-            self.oled.fill_rect(cx, y + 9, 2, 2, 1)
+            self.oled.fill_rect(cx, 9, 2, 2, 1)
         if bars >= 2:
-            self.oled.hline(cx - 1, y + 6, 4, 1)
-            self.oled.pixel(cx - 2, y + 7, 1)
-            self.oled.pixel(cx + 3, y + 7, 1)
+            self.oled.hline(cx - 1, 6, 4, 1)
+            self.oled.pixel(cx - 2, 7, 1)
+            self.oled.pixel(cx + 3, 7, 1)
         if bars >= 3:
-            self.oled.hline(cx - 2, y + 3, 6, 1)
-            self.oled.pixel(cx - 3, y + 4, 1)
-            self.oled.pixel(cx + 4, y + 4, 1)
-            self.oled.pixel(cx - 4, y + 5, 1)
-            self.oled.pixel(cx + 5, y + 5, 1)
+            self.oled.hline(cx - 2, 3, 6, 1)
+            self.oled.pixel(cx - 3, 4, 1)
+            self.oled.pixel(cx + 4, 4, 1)
+            self.oled.pixel(cx - 4, 5, 1)
+            self.oled.pixel(cx + 5, 5, 1)
         if bars >= 4:
-            self.oled.hline(cx - 2, y, 6, 1)
-            self.oled.hline(cx - 4, y + 1, 2, 1)
-            self.oled.hline(cx + 4, y + 1, 2, 1)
-            self.oled.pixel(cx - 5, y + 2, 1)
-            self.oled.pixel(cx + 6, y + 2, 1)
-            self.oled.pixel(cx - 6, y + 3, 1)
-            self.oled.pixel(cx + 7, y + 3, 1)
+            self.oled.hline(cx - 2, 0, 6, 1)
+            self.oled.hline(cx - 4, 1, 2, 1)
+            self.oled.hline(cx + 4, 1, 2, 1)
+            self.oled.pixel(cx - 5, 2, 1)
+            self.oled.pixel(cx + 6, 2, 1)
+            self.oled.pixel(cx - 6, 3, 1)
+            self.oled.pixel(cx + 7, 3, 1)
 
     def draw_gps_icon(self, connected):
         self.oled.fill_rect(GPS_X - 3, 0, 28, 12, 0)
         if connected:
-            self.oled.text("GPS", GPS_X, GPS_Y, 1)
+            self.oled.text("GPS", GPS_X, 2, 1)
 
     def draw_sensor_data(self, gps_data, gps_active, has_fix, imu_data):
-        """REŽIM 0: Textová data z vašeho gps_lib.py a MPU6050."""
         self.clear_body()
-
-        lat = gps_data.get("latitude")
-        lon = gps_data.get("longitude")
-        sats_used = gps_data.get("satellites") or 0
-        sats_view = gps_data.get("satellites_in_view") or 0
-        utc_str = self._format_time(gps_data.get("time"))
-
+        lat, lon = gps_data.get("latitude"), gps_data.get("longitude")
+        sats = gps_data.get("satellites") or 0
+        sats_v = gps_data.get("satellites_in_view") or 0
         spd = gps_data.get("speed_kmh")
         if spd is None and gps_data.get("speed_knots") is not None:
             spd = gps_data["speed_knots"] * 1.852
@@ -105,86 +123,73 @@ class OledDisplay:
             self.oled.text("GPS: Odpojeno", 0, 16)
             self.oled.text("Cekam na UART...", 0, 26)
         elif has_fix and lat is not None and lon is not None:
-            self.oled.text(f"La:{lat:7.4f} S:{sats_used:02d}", 0, 16)
+            self.oled.text(f"La:{lat:7.4f} S:{sats:02d}", 0, 16)
             self.oled.text(f"Lo:{lon:7.4f} {spd:3.0f}km", 0, 26)
         else:
-            msg = gps_data.get("last_sentence") or "---"
-            self.oled.text(f"UTC {utc_str} {msg}", 0, 16)
-            self.oled.text(f"Sat:{sats_used}/{sats_view:02d} NoFix", 0, 26)
+            msg = gps_data.get("last_sentence") or ""
+            self.oled.text(f"GPS: NoFix {msg}", 0, 16)
+            self.oled.text(f"Sat:{sats}/{sats_v:02d}", 0, 26)
 
         self.oled.hline(0, 37, OLED_WIDTH, 1)
 
         if imu_data is not None:
-            ax = imu_data["accel"]["x"]
-            ay = imu_data["accel"]["y"]
-            az = imu_data["accel"]["z"]
-            gx = imu_data["gyro"]["x"]
-            gy = imu_data["gyro"]["y"]
-            gz = imu_data["gyro"]["z"]
-
+            la, g = imu_data["linear_accel"], imu_data["gyro"]
+            ax = 0.0 if abs(la["x"]) < 0.05 else la["x"]
+            ay = 0.0 if abs(la["y"]) < 0.05 else la["y"]
+            az = 0.0 if abs(la["z"]) < 0.05 else la["z"]
+            gx = 0.0 if abs(g["x"]) < 0.5 else g["x"]
+            gy = 0.0 if abs(g["y"]) < 0.5 else g["y"]
+            gz = 0.0 if abs(g["z"]) < 0.5 else g["z"]
             self.oled.text(f"A:{ax:4.1f} {ay:4.1f} {az:4.1f}", 0, 41)
             self.oled.text(f"G:{gx:4.0f} {gy:4.0f} {gz:4.0f}", 0, 52)
         else:
             self.oled.text("IMU: Odpojeno", 0, 41)
             self.oled.text("Hledam I2C...", 0, 52)
 
-    def draw_motion_arrow_screen(self, gps_data, imu_data):
-        """
-        REŽIM 1: Vykreslí šipku směru a velikosti lineárního zrychlení v osách X, Y
-        uprostřed displeje a nadmořskou výšku (osa Z) z GPS v levém dolním rohu.
-        """
+    def draw_gps_arrow_screen(self, gps_data, has_fix=True):
         self.clear_body()
+        spd = gps_data.get("speed_kmh")
+        if spd is None and gps_data.get("speed_knots") is not None:
+            spd = gps_data["speed_knots"] * 1.852
+        spd = spd or 0.0
 
-        cx = OLED_WIDTH // 2  # x = 64
-        cy = 38               # Střed plochy pod lištou
-
-        alt = gps_data.get("altitude")
-        if alt is not None:
-            self.oled.text(f"Alt:{alt:.1f}m", 0, 55)
+        if self.bearing is not None:
+            card = DIRS[int((self.bearing + 22.5) // 45) % 8]
+            self.oled.text(f"{card}{int(round(self.bearing)):03d}st", 0, 17)
         else:
-            self.oled.text("Alt: --- m", 0, 55)
+            self.oled.text("GPS Fix?" if not has_fix else "Jdi >3m", 0, 17)
 
-        if imu_data is None:
-            self.oled.text("IMU Chyba", 30, 35)
-            return
+        self.oled.text(f"{spd:4.1f}km/h", 0, 29)
+        self.oled.text(f"Alt:{int(round(self.filtered_alt))}m" if self.filtered_alt is not None else "Alt:---m", 0, 42)
+        if self.filtered_alt is not None and self.base_alt is not None:
+            self.oled.text(f"dH:{self.filtered_alt - self.base_alt:+4.1f}m", 0, 54)
+        else:
+            self.oled.text("dH: ---", 0, 54)
 
-        ax = imu_data["linear_accel"]["x"]
-        ay = imu_data["linear_accel"]["y"]
-        magnitude = math.sqrt(ax * ax + ay * ay)
+        cx, cy, r = 100, 40, 16
+        self.oled.text("N", cx - 3, 15)
+        for deg in range(0, 360, 15):
+            rad = math.radians(deg)
+            self.oled.pixel(int(round(cx + math.sin(rad) * r)), int(round(cy - math.cos(rad) * r)), 1)
+        self.oled.hline(cx + r - 2, cy, 3, 1)
+        self.oled.vline(cx, cy + r - 2, 3, 1)
+        self.oled.hline(cx - r, cy, 3, 1)
 
-        self.oled.text(f"a:{magnitude:3.1f}", 0, 16)
-
-        max_len = 21
-        self.oled.pixel(cx - max_len, cy, 1)
-        self.oled.pixel(cx + max_len, cy, 1)
-        self.oled.pixel(cx, cy - max_len, 1)
-        self.oled.pixel(cx, cy + max_len, 1)
-
-        if magnitude < 0.25:
+        if self.bearing is None:
             self.oled.fill_rect(cx - 1, cy - 1, 3, 3, 1)
             return
 
-        min_len = 5
-        length = min(max_len, max(min_len, int(round(magnitude * 4.5))))
+        rad = math.radians(self.bearing)
+        ux, uy = math.sin(rad), -math.cos(rad)
+        ex, ey = int(round(cx + ux * (r - 3))), int(round(cy + uy * (r - 3)))
+        sx, sy = int(round(cx - ux * 6)), int(round(cy - uy * 6))
+        px, py = int(round(-uy)), int(round(ux))
+        self.oled.line(sx, sy, ex, ey, 1)
+        self.oled.line(sx + px, sy + py, ex + px, ey + py, 1)
 
-        ux = ax / magnitude
-        uy = -ay / magnitude
-
-        ex = int(round(cx + ux * length))
-        ey = int(round(cy + uy * length))
-
-        px = int(round(-uy))
-        py = int(round(ux))
-        self.oled.line(cx, cy, ex, ey, 1)
-        self.oled.line(cx + px, cy + py, ex + px, ey + py, 1)
-
-        head_len = min(7, max(4, length // 3))
-        angle = math.atan2(uy, ux)
-        lx = int(round(ex + math.cos(angle + 2.6) * head_len))
-        ly = int(round(ey + math.sin(angle + 2.6) * head_len))
-        rx = int(round(ex + math.cos(angle - 2.6) * head_len))
-        ry = int(round(ey + math.sin(angle - 2.6) * head_len))
-
+        ang = math.atan2(uy, ux)
+        lx, ly = int(round(ex + math.cos(ang + 2.6) * 5)), int(round(ey + math.sin(ang + 2.6) * 5))
+        rx, ry = int(round(ex + math.cos(ang - 2.6) * 5)), int(round(ey + math.sin(ang - 2.6) * 5))
         self.oled.line(ex, ey, lx, ly, 1)
         self.oled.line(ex, ey, rx, ry, 1)
         self.oled.line(lx, ly, rx, ry, 1)
